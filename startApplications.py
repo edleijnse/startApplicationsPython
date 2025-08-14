@@ -14,7 +14,7 @@ APPS = [
         "commands": {
             "win": ["notepad"],
             "darwin": ["open", "-a", "TextEdit"],
-            "linux": ["gedit"],  # Alternativen: ["xed"], ["kate"], ["leafpad"]
+            "linux": ["gnome-text-editor"],  # Alternativen: ["xed"], ["kate"], ["leafpad"]
         },
     },
     {
@@ -41,6 +41,32 @@ APPS = [
             "linux": ["xdg-open", "."],
         },
     },
+    {
+        "label": "Start Applications",
+        "commands": {
+            "win": ["explorer", "."],
+            "darwin": ["open", "."],
+            "linux": ["python3", "/home/ed/PycharmProjects/startApplicationsPython/startApplications.py"],
+        },
+    },
+    {
+        "label": "Pycharm",
+        "commands": {
+            "win": ["explorer", "."],
+            "darwin": ["open", "."],
+            "linux": ["/home/ed/Jetbrains/pycharm-2025.2.0.1/bin/pycharm", "/home/ed/PycharmProjects"],
+        },
+    },
+    {
+        "label": "IntelliJ IDEA",
+        "commands": {
+            "win": ["explorer", "."],
+            "darwin": ["open", "."],
+            "linux": ["/home/ed/Jetbrains/ideaIU-2025.2/idea-IU-252.23892.409/bin/idea", "/home/ed/IdeaProjects"],
+        },
+    },
+
+
 ]
 
 # Hilfsfunktionen
@@ -110,7 +136,7 @@ class AppLauncherGUI(tk.Tk):
     def __init__(self, apps: list[dict]):
         super().__init__()
         self.title("Anwendungen starten")
-        self.geometry("420x320")
+        self.geometry("620x720")
         self.resizable(True, True)
 
         self.apps = apps

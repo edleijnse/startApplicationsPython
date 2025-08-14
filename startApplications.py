@@ -3,71 +3,61 @@ import sys
 import os
 import shutil
 import subprocess
+import configparser
+import shlex
 import tkinter as tk
 from tkinter import messagebox
 
 # Konfiguration: Anwendungs-Liste mit plattformspezifischen Start-Befehlen
 # Passen Sie die Befehle nach Bedarf an Ihre Umgebung an.
-APPS = [
-    {
-        "label": "Texteditor",
-        "commands": {
-            "win": ["notepad"],
-            "darwin": ["open", "-a", "TextEdit"],
-            "linux": ["gnome-text-editor"],  # Alternativen: ["xed"], ["kate"], ["leafpad"]
-        },
-    },
-    {
-        "label": "Rechner",
-        "commands": {
-            "win": ["calc"],
-            "darwin": ["open", "-a", "Calculator"],
-            "linux": ["gnome-calculator"],  # Alternative: ["kcalc"]
-        },
-    },
-    {
-        "label": "Terminal",
-        "commands": {
-            "win": ["cmd"],  # Alternative: ["wt"] (Windows Terminal) falls vorhanden
-            "darwin": ["open", "-a", "Terminal"],
-            "linux": ["x-terminal-emulator"],  # Alternativen: ["gnome-terminal"], ["konsole"], ["xfce4-terminal"]
-        },
-    },
-    {
-        "label": "Dateimanager",
-        "commands": {
-            "win": ["explorer", "."],
-            "darwin": ["open", "."],
-            "linux": ["xdg-open", "."],
-        },
-    },
-    {
-        "label": "Start Applications",
-        "commands": {
-            "win": ["explorer", "."],
-            "darwin": ["open", "."],
-            "linux": ["python3", "/home/ed/PycharmProjects/startApplicationsPython/startApplications.py"],
-        },
-    },
-    {
-        "label": "Pycharm",
-        "commands": {
-            "win": ["explorer", "."],
-            "darwin": ["open", "."],
-            "linux": ["/home/ed/Jetbrains/pycharm-2025.2.0.1/bin/pycharm", "/home/ed/PycharmProjects"],
-        },
-    },
-    {
-        "label": "IntelliJ IDEA",
-        "commands": {
-            "win": ["explorer", "."],
-            "darwin": ["open", "."],
-            "linux": ["/home/ed/Jetbrains/ideaIU-2025.2/idea-IU-252.23892.409/bin/idea", "/home/ed/IdeaProjects"],
-        },
-    },
+def load_apps_from_ini(path: str) -> list[dict]:
+    """
+    Lädt Anwendungen und plattformspezifische Befehle aus einer INI-Datei.
+
+    Struktur der INI-Datei:
+    [AppName]             ; Sektion je Anwendung, Name dient als Default-Label
+    label = Optionales Label (überschreibt Sektionsnamen)
+    win = Befehl für Windows (z.B. notepad oder "explorer .")
+    darwin = Befehl für macOS (z.B. "open -a TextEdit")
+    linux = Befehl für Linux (z.B. "gnome-calculator")
+
+    Hinweise:
+    - Argumente werden mit shlex gesplittet (Windows: posix=False, sonst True).
+    - Leere oder fehlende Plattformzeilen werden ignoriert.
+    """
+    cfg = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+    apps: list[dict] = []
+
+    if not os.path.exists(path):
+        return apps
+
+    cfg.read(path, encoding="utf-8")
+
+    for section in cfg.sections():
+        sec = cfg[section]
+        label = (sec.get("label", section) or section).strip()
+        commands: dict[str, list[str]] = {}
+
+        for plat in ("win", "darwin", "linux"):
+            raw = sec.get(plat, "").strip()
+            if raw:
+                # Windows verwendet häufig andere Quoting-Regeln -> posix=False
+                parts = shlex.split(raw, posix=(plat != "win"))
+                if parts:
+                    commands[plat] = parts
+
+        if commands:
+            apps.append({"label": label, "commands": commands})
+
+    return apps
 
 
-]
+# Pfad zur INI-Datei: via ENV START_APPS_INI oder lokale Datei im selben Ordner
+CONFIG_PATH = os.environ.get(
+    "START_APPS_INI",
+) or os.path.join(os.path.dirname(__file__), "startApplications.ini")
+
+APPS = load_apps_from_ini(CONFIG_PATH)
 
 # Hilfsfunktionen
 def platform_key() -> str:
